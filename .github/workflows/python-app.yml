@@ -2,9 +2,9 @@ name: Python application
 
 on:
   push:
-    branches: [ main ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ main ]
+    branches: [ "main" ]
 
 jobs:
   build:
@@ -12,27 +12,30 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-
-    - name: Set up Python 3.9
-      uses: actions/setup-python@v4
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Set up Python 3.12.6
+      uses: actions/setup-python@v3
       with:
-        python-version: 3.9
-
-    - name: Install dependencies
+        python-version: "3.12.6"
+    
+    - name: Remove old venv if exists
       run: |
-        python -m pip install --upgrade pip
-        make install
+        if [ -d "venv" ]; then rm -rf venv; fi
+    
+    - name: Install dependencies using Makefile
+      run: make install
 
-    - name: Run application
+    - name: Run the Flask server
       run: |
-        nohup make run > app.log 2>&1 &
-        sleep 5
+        make run &
+        sleep 15
 
-    - name: Check if application is running
+    - name: Verify server is running
       run: |
-        curl -f http://localhost:3000 || (cat app.log && exit 1)
+        curl --fail http://localhost:3000 || exit 1  # Check if the server is running
 
-    - name: Stop application
+    - name: Stop the server
       run: |
-        pkill -f "python app.py"
+        kill $(jobs -p) || true  # Kill the server process
