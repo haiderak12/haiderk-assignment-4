@@ -1,0 +1,38 @@
+name: Python application
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python 3.12.6
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.12.6
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        make install
+
+    - name: Run application
+      run: |
+        nohup make run > app.log 2>&1 &
+        sleep 5
+
+    - name: Check if application is running
+      run: |
+        curl -f http://localhost:3000 || (cat app.log && exit 1)
+
+    - name: Stop application
+      run: |
+        pkill -f "python app.py"
